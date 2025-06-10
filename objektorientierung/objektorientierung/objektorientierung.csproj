@@ -102,5 +102,10 @@
   <ItemGroup>
     <Resource Include="image.png" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Unbenannt.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

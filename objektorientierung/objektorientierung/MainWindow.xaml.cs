@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
+using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,63 +15,102 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
-namespace objektorientierung
+namespace Objektorieniterung
 {
-    
-    class Rechteck 
+    class Rechteck
     {
-        // Sinnloser Kommentar
         public double laenge = 1;
         public double breite = 2;
-        public double x = 0;
-        public double y = 0;
+        public double posX = 1;
+        public double posY = 1;
 
-        public double FlaechenBerechnen()
+
+        public double FlaecheBerechnen()
         {
+
+
             return laenge * breite;
         }
-         public Rechteck(double laenge, double breite, double x, double y) 
+
+        public Rechteck(double laenge, double breite, double posX, double posY)
+
         {
             this.laenge = laenge;
             this.breite = breite;
-            this.y= y;
-            this.x = x;
-            
+            this.posX = posX;
+            this.posY = posY;
         }
+
         public override string ToString()
         {
-            return $"Rechteck: {laenge}x{breite} [{x}] [{y}]";
+            return $"Rechteck: {laenge}x{breite}";
         }
+
     }
 
-    class Spieler 
+    class Spieler
     {
-        public int xplayer;
-        public int yplayer;
+        public int x;
+        public int y;
         public Image image;
-        public Spieler()
+        public MainWindow.Direction direction = MainWindow.Direction.None;
+        public List<Rechteck> rechtecke;
+
+        public Spieler(List<Rechteck> rechtecke)
         {
-            xplayer = 1;
-            yplayer = 1;
+            x = 1;
+            y = 1;
+            this.rechtecke = rechtecke;
         }
-        public void Move(Key key)
+
+        public void Move()
         {
-            if (key == Key.Left)
+            int currentX = x;
+            int currentY = y;
+
+            if (direction == MainWindow.Direction.Left)
             {
-                xplayer--;
-            } else if (key == Key.Right)
-            {
-                xplayer++;
-            } else if(key == Key.Up)
-            {
-                yplayer--;
-            }else if (key == Key.Down)
-            {
-                yplayer++;
+                x--;
             }
-            Canvas.SetLeft(image, xplayer*MainWindow.GRID_SIZE);
-            Canvas.SetTop(image, yplayer*MainWindow.GRID_SIZE);
+            else if (direction == MainWindow.Direction.Right)
+            {
+                x++;
+            }
+            else if (direction == MainWindow.Direction.Up)
+            {
+                y--;
+
+            }
+            else if (direction == MainWindow.Direction.Down)
+            {
+                y++;
+            }
+
+            bool collision = false;
+            foreach(Rechteck r in rechtecke)
+            {
+                if (r.posX == x * MainWindow.GRID_SIZE && r.posY == y * MainWindow.GRID_SIZE)
+                {
+                    collision = true;
+                }
+            }
+            if (collision)
+            {
+                x = currentX;
+                y = currentY;
+            }
+
+            Canvas.SetTop(image, y * MainWindow.GRID_SIZE);
+            Canvas.SetLeft(image, x * MainWindow.GRID_SIZE);
+
+        }
+        public void SetDirection(MainWindow.Direction direction)
+        {
+            this.direction = direction;
+
+
         }
 
     }
@@ -79,132 +120,228 @@ namespace objektorientierung
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<Rechteck> rechtecke = new List<Rechteck>();
+        public enum Direction
+        {
+            Up,
+            Down,
+            Left,
+            Right,
+            None
+        }
 
-        Spieler spieler = new Spieler();
-        public static int GRID_SIZE = 25;
+
+        List<Rechteck> rechtecke = new List<Rechteck>();
+        Spieler spieler = null;
+        public static int GRID_SIZE = 10;
+
+        DispatcherTimer timer = null;
+
+        private void Update(object sender, EventArgs e)
+        {
+            spieler.Move();
+        }
+
+
         public MainWindow()
         {
             InitializeComponent();
+
+            spieler = new Spieler(rechtecke);
+
+
             StreamReader reader = new StreamReader("wallsList.txt");
-            string wallist = reader.ReadToEnd();
-            string[] walls = wallist.Split( '\n' );
-            for(int i =0; i< walls.Length; i++)
+            string zeile;
+            double laenge = 10;
+            double breite = 10;
+            double posX = 0;
+            double posY = 0;
+
+            while ((zeile = reader.ReadLine()) != null)
             {
-                int x = int.Parse(walls[i].Split(',')[0])* GRID_SIZE;
-                int y = int.Parse(walls[i].Split(',')[1])* GRID_SIZE;
-                Rechteck r = new Rechteck(GRID_SIZE, GRID_SIZE, x, y);
-                rechtecke.Add(r);
-                lstrechtecke.Items.Add(r);
-            }
-        }
+                string[] teile = zeile.Split(',');
+                posX = double.Parse(teile[0]) * GRID_SIZE;
+                posY = double.Parse(teile[1]) * GRID_SIZE;
 
-        private void TextBox_IsKeyboardFocusWithinChanged(object sender, DependencyPropertyChangedEventArgs e)
-        {
 
-        }
 
-        private void btnSpeichern_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                string laengeStr = this.tbxlaenge.Text;
-                double laenge = double.Parse(laengeStr);
-                string breiteStr = this.tbxbreite.Text;
-                double breite = double.Parse(breiteStr);
-                string xStr = this.tbxx.Text;
-                double x = double.Parse(xStr);
-                string yStr = this.tbxy.Text;
-                double y = double.Parse(yStr);
-                if (lstrechtecke.SelectedItem != null)
+
+                if (lstRechtecke.SelectedItem != null)
                 {
-                    Rechteck r=(Rechteck)lstrechtecke.SelectedItem;
-                    r.breite= breite;
-                    r.laenge= laenge;
-                    r.x = x;
-                    r.y = y;
-                    lstrechtecke.Items.Refresh();
+                    Rechteck r = (Rechteck)lstRechtecke.SelectedItem;
+                    r.laenge = laenge;
+                    r.breite = breite;
+
 
                 }
                 else
                 {
-                    Rechteck r = new Rechteck(laenge, breite, x, y);
-                    lstrechtecke.Items.Add(r);
+                    Rechteck r = new Rechteck(1, 1, posX, posY);
+                    lstRechtecke.Items.Add(r);
                     rechtecke.Add(r);
-                    lstrechtecke.Items.Refresh();
-                   
-                    
                 }
-                
-                tbxbreite.Clear();
-                tbxlaenge.Clear();
-                tbxx.Clear();
-                tbxy.Clear();
+                Rectangle rect = new Rectangle();
+
+                rect.Width = laenge;
+                rect.Height = breite;
+                rect.StrokeThickness = 2;
+                rect.Stroke = Brushes.Black;
+                rect.Fill = Brushes.Black;
+
+                Canvas.SetLeft(rect, posX);
+                Canvas.SetTop(rect, posY);
+
+
+                myCanvas.Children.Add(rect);
             }
-            catch(FormatException) 
-            {
-                MessageBox.Show("Ungültige Eingabe");  
-            };
-            
-        }
 
-        private void lstrechtecke_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-           Rechteck r=(Rechteck)this.lstrechtecke.SelectedItem;
-             tbxlaenge.Text= r.laenge.ToString();
-            tbxbreite.Text= r.breite.ToString();
-            tbxx.Text= r.x.ToString();
-            tbxy.Text= r.y.ToString();
-        }
-
-        private void btnreckteckeloeschen(object sender, RoutedEventArgs e)
-        {
-            myCanvas.Children.Clear();
-        }
-
-        private void btnrechteckezeichnen(object sender, RoutedEventArgs e)
-        {
-
-            for (int i=0; i<rechtecke.Count; i++)
-            {
-
-                Rectangle rectangle = new Rectangle();
-                double x = rechtecke[i].x;
-                double y = rechtecke[i].y;
-                rectangle.StrokeThickness = 2;
-                rectangle.Stroke = Brushes.Red;
-                rectangle.Width = rechtecke[i].breite;
-                rectangle.Height = rechtecke[i].laenge;
-                rectangle.Margin = new Thickness(5);
-                myCanvas.Children.Add(rectangle);
-                Canvas.SetLeft(rectangle, y);
-                Canvas.SetTop(rectangle, x);
-            };
-
+            reader.Close();
             spieler.image = new Image();
             BitmapImage bitmap = new BitmapImage();
             bitmap.BeginInit();
-            bitmap.UriSource = new Uri("image.png", UriKind.Relative);
+            bitmap.UriSource = new Uri("Unbenannt.jpg", UriKind.Relative);
             bitmap.EndInit();
-            spieler.image.Source= bitmap;
+            spieler.image.Source = bitmap;
             spieler.image.Width = GRID_SIZE;
             spieler.image.Height = GRID_SIZE;
-            Canvas.SetTop(spieler.image, spieler.yplayer* GRID_SIZE);
-            Canvas.SetLeft(spieler.image, spieler.xplayer*GRID_SIZE);
-           
+            Canvas.SetTop(spieler.image, spieler.y * GRID_SIZE);
+            Canvas.SetLeft(spieler.image, spieler.x * GRID_SIZE);
             myCanvas.Children.Add(spieler.image);
+            double dummy = bitmap.Width + 1;
+
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string laengeStr = this.tbxLaenge.Text;
+                double laenge = double.Parse(laengeStr);
+                string breiteStr = this.tbxBreite.Text;
+                double breite = double.Parse(breiteStr);
+                double posX = double.Parse(tbxx.Text);
+                double posY = double.Parse(tbxy.Text);
+
+                if (lstRechtecke.SelectedItem != null)
+                {
+                    Rechteck r = (Rechteck)lstRechtecke.SelectedItem;
+                    r.laenge = laenge;
+                    r.breite = breite;
+
+
+                }
+                else
+                {
+                    Rechteck r = new Rechteck(laenge, breite, posX, posY);
+                    lstRechtecke.Items.Add(r);
+                    rechtecke.Add(r);
+                }
+
+                tbxLaenge.Clear();
+                tbxBreite.Clear();
+                tbxx.Clear();
+                tbxy.Clear();
+                lstRechtecke.SelectedItem = null;
+
+                lstRechtecke.Items.Refresh();
+
+            }
+            catch (FormatException)
+            {
+                MessageBox.Show("Ungültige Eingabe!");
+            }
+        }
+
+
+        private void lstRechtecke_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Rechteck r = (Rechteck)this.lstRechtecke.SelectedItem;
+            if (r != null)
+            {
+                tbxLaenge.Text = r.laenge.ToString();
+                tbxBreite.Text = r.breite.ToString();
+                tbxx.Text = r.posX.ToString();
+                tbxy.Text = r.posY.ToString();
+            }
+        }
+
+        private void Button_Zeichnen_Click(object sender, RoutedEventArgs e)
+        {
+            string laengeStr = this.tbxLaenge.Text;
+            double laenge = double.Parse(laengeStr);
+            string breiteStr = this.tbxBreite.Text;
+            double breite = double.Parse(breiteStr);
+            string posXStr = this.tbxx.Text;
+            double posX = double.Parse(tbxx.Text);
+            string posYStr = this.tbxy.Text;
+            double posY = double.Parse(tbxy.Text);
+
+            Rectangle rect = new Rectangle();
+
+            rect.Width = laenge;
+            rect.Height = breite;
+            rect.StrokeThickness = 2;
+            rect.Stroke = Brushes.Black;
+
+            Canvas.SetLeft(rect, posX);
+            Canvas.SetTop(rect, posY);
+
+
+            myCanvas.Children.Add(rect);
+        }
+
+        private void Button_LoeschenAlle_Click(object sender, RoutedEventArgs e)
+        {
+
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
+            if (e.Key == Key.Left)
+            {
+                spieler.SetDirection(Direction.Left);
+            }
+            else if (e.Key == Key.Right)
+            {
+                spieler.SetDirection(Direction.Right);
+            }
+            else if (e.Key == Key.Up)
+            {
+                spieler.SetDirection(Direction.Up);
+            }
+            else if (e.Key == Key.Down)
+            {
+                spieler.SetDirection(Direction.Down);
+            }
+            else
+            {
+                spieler.SetDirection(Direction.None);
 
-            spieler.Move(e.Key);
+
+            }
         }
 
-        private void btnspielstarten(object sender, RoutedEventArgs e)
+        private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            if(stp_sidebar.Visibility == Visibility.Collapsed) stp_sidebar.Visibility = Visibility.Visible;
-            else stp_sidebar.Visibility = Visibility.Collapsed;
+            if (stp_sidebar.Visibility == Visibility.Collapsed)
+            {
+                stp_sidebar.Visibility = Visibility.Visible;
+                stp_background.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                stp_sidebar.Visibility = Visibility.Collapsed;
+                stp_background.Visibility = Visibility.Collapsed;
+
+
+                timer = new DispatcherTimer(DispatcherPriority.Render);
+                timer.Interval = TimeSpan.FromMilliseconds(300);
+                timer.Tick += Update;
+                timer.Start();
+            }
+
+
         }
+
+
     }
 }
