@@ -19,12 +19,13 @@ namespace objektorientierung
     
     class Rechteck 
     {
+        // Sinnloser Kommentar
         public double laenge = 1;
         public double breite = 2;
         public double x = 0;
         public double y = 0;
 
-        public double FlaechenBerechnen() 
+        public double FlaechenBerechnen()
         {
             return laenge * breite;
         }
