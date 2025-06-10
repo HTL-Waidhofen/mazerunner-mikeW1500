@@ -4,7 +4,7 @@
 
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 
-        Title="MainWindow" Height="450" Width="800"
+        Title="MainWindow" Height="600" Width="800"
 
         KeyDown="Window_KeyDown">
     <StackPanel Orientation="Horizontal">
@@ -14,12 +14,12 @@
             </StackPanel.Background>
 
             <StackPanel Orientation="Horizontal" Margin="10">
-                <Label Width="100">Höhe</Label>
+                <Label Width="100" Content="Height"/>
                 <TextBox x:Name="tbxLaenge" Width="100"/>
             </StackPanel>
 
             <StackPanel Orientation="Horizontal" Margin="10">
-                <Label Width="100">Breite</Label>
+                <Label Width="100" Content="Width"/>
                 <TextBox x:Name="tbxBreite" Width="100"/>
             </StackPanel>
 
@@ -34,15 +34,15 @@
             </StackPanel>
 
             <StackPanel x:Name="stp_sidebar" HorizontalAlignment="Left">
-                <Button Margin="10" Width="100" Click="Button_Click">Speichern</Button>
+                <Button Margin="10" Width="100" Click="Button_Click">Save</Button>
                 <ListView x:Name="lstRechtecke" Height="200" Width="200" Margin="10" SelectionChanged="lstRechtecke_SelectionChanged"/>
-                <Button Content="Zeichnen" Margin="5" Width="100" Click="Button_Zeichnen_Click"/>
-                <Button Content="löschen" Margin="5" Width="100" Click="Button_LoeschenAlle_Click"/>
-                <Button Margin="10" Content="Starten" Click="Button_Click_1"></Button>
+                <Button Content="Draw" Margin="5" Width="100" Click="Button_Zeichnen_Click"/>
+                <Button Content="Delete" Margin="5" Width="100" Click="Button_LoeschenAlle_Click"/>
+                <Button Margin="10" Content="Start" Click="Button_Click_1" Width="100"></Button>
             </StackPanel>
         </StackPanel>
         <StackPanel>
-            <Button Margin="10" Content="Starten" Click="Button_Click_1"></Button>
+            <Button Margin="10" Content="Start" Click="Button_Click_1"></Button>
         </StackPanel>
 
         <Canvas Width="400" Height="400"  x:Name="myCanvas" Margin="10"/>
